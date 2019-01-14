@@ -10,3 +10,13 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+work/*
+
+# Ignore all nextflow related items
+nextflow
+.nextflow.lo*
+.nextflow/
+
+# Ignore test video files
+*.mov
+*.mp4
