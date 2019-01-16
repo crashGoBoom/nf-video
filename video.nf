@@ -12,7 +12,7 @@ videofile_ch = file(params.inputs)
 opt_file = file(params.filter)
 
 process convert {
-  container 'jrottenberg/ffmpeg:4.0-ubuntu'
+
   input:
   file input_file from videofile_ch
   output:
@@ -25,7 +25,7 @@ process convert {
 }
 
 process segment {
-  container 'jrottenberg/ffmpeg:4.0-ubuntu'
+
   input:
   file 'input.mp4' from input_video
   output:
@@ -36,7 +36,7 @@ process segment {
 }
 
 process encode_video {
-  container 'jrottenberg/ffmpeg:4.0-ubuntu'
+
   input:
   file segment_file from segments
   output:
@@ -47,7 +47,7 @@ process encode_video {
 }
 
 process concat {
-  container 'jrottenberg/ffmpeg:4.0-ubuntu'
+
   input:
   file segment_files from segments_encoded.toList()
   file 'input.aac' from input_audio
