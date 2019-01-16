@@ -14,12 +14,14 @@ opt_file = file(params.filter)
 process convert {
   container 'jrottenberg/ffmpeg:4.0-ubuntu'
   input:
-  file 'input.mov' from videofile_ch
+  file input_file from videofile_ch
   output:
   file 'input.mp4' into input_video
-  '''
-  ffmpeg -i input.mov -vcodec copy -acodec copy input.mp4
-  '''
+  file 'input.aac' into input_audio
+  """
+  ffmpeg -i ${input_file} -vcodec copy -an input.mp4
+  ffmpeg -i ${input_file} -vn -acodec aac input.aac
+  """
 }
 
 process segment {
@@ -33,22 +35,23 @@ process segment {
   '''
 }
 
-process encode {
+process encode_video {
   container 'jrottenberg/ffmpeg:4.0-ubuntu'
   input:
   file segment_file from segments
   output:
   file 'encoded_*.mp4' into segments_encoded
   """
-  ffmpeg -i ${segment_file} -crf 23 -vcodec libx264 -acodec aac encoded_${segment_file}
+  ffmpeg -i ${segment_file} -crf 23 -vcodec libx264 encoded_${segment_file}
   """
 }
-
 
 process concat {
   container 'jrottenberg/ffmpeg:4.0-ubuntu'
   input:
   file segment_files from segments_encoded.toList()
+  file 'input.aac' from input_audio
+
   output:
   file 'completed.mp4'
   shell:
@@ -59,7 +62,7 @@ process concat {
   for i in ${sorted[@]}; do
     echo "file $i" >> concatlist.txt
   done
-  ffmpeg -f concat -i concatlist.txt -c copy completed.mp4
+  ffmpeg -f concat -i concatlist.txt -i input.aac -c copy completed.mp4
   '''
 }
 
