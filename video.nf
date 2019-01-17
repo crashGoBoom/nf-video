@@ -4,7 +4,6 @@
  * Copyright (c) 2019, Christopher Mundus (crashGoBoom)
  */
 
-
 params.inputs = "$baseDir/video.mov"
 params.filter = 'NO_FILE'
 
@@ -25,6 +24,7 @@ process convert {
 }
 
 process segment {
+
 
   input:
   file 'input.mp4' from input_video
@@ -47,13 +47,13 @@ process encode_video {
 }
 
 process concat {
-
+  publishDir "$workflow.projectDir"
   input:
   file segment_files from segments_encoded.toList()
   file 'input.aac' from input_audio
 
   output:
-  file 'completed.mp4'
+  file 'completed.mp4' into file_output
   shell:
   '''
   files=(!{segment_files})
