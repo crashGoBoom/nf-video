@@ -4,7 +4,7 @@
 #
 #         File: nf-video.sh
 #
-#        Usage: ./nf-video.sh -t $HASHTYPE -c $CHECKSUM -d $FILETODOWNLOAD
+#        Usage: ./nf-video.sh -i $FILETOENCODE
 #
 #  Description: Runs a video job.
 #
