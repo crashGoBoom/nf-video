@@ -26,6 +26,7 @@ set -o errexit   # Exit when a command fails
 WARN="\033[31m"
 INFO="\033[32m"
 NOCOLOR="\033[0m"
+INSTALL_DIR="/usr/local/bin"
 
 #==========================================================================
 # Functions
@@ -51,38 +52,76 @@ function log() {
 #      CREATED: 20190115
 #==========================================================================
 function usage() {
-  log $INFO "Usage:\n./nf-video.sh [OPTIONS]" 1>&2
-  exit 1
+  cat <<help_message
+--- script subcommand -------------------------------------------------------------
+Commands related to this script
+USAGE:
+  ./nf-video.sh [FLAGS] [SUBCOMMAND]
+FLAGS:
+  -h  Prints help information
+  -i  Video to Process (Required.)
+  -w  Adds a watermark (Defaults to lower right.)
+SUBCOMMANDS:
+  all                  Do everything (blah, blah2) [default]
+help_message
+
+  return 1
 }
 
-while getopts 'h?:w:i:' opt; do
-  case "${opt}" in
-    h|\?)
-      log $INFO "Help:\n-w Add a watermark image (PNG,JPG). "
-      usage
-    ;;
-    w)
-      WATERMARK=${OPTARG}
-      log $INFO "Adding a watermark with ${WATERMARK}"
-    ;;
-    i)
-      VIDEO_INPUT=${OPTARG}
-      log $INFO "Processing: ${WATERMARK}"
-    ;;
+function get_opts() {
+  #  Parse options to the main command.
+  while getopts 'h?:w:i:' opt; do
+    case "${opt}" in
+      h|\?)
+        log $INFO "Help:\n-w Add a watermark image (PNG,JPG). "
+        usage
+      ;;
+      w)
+        WATERMARK=${OPTARG}
+        log $INFO "Adding a watermark with ${WATERMARK}"
+      ;;
+      i)
+        VIDEO_INPUT=${OPTARG}
+        log $INFO "Processing: ${VIDEO_INPUT}"
+      ;;
+      *)
+        usage
+      ;;
+      : )
+        usage
+      ;;
+    esac
+  done
+  shift $((OPTIND-1))
+
+  if [[ ${VIDEO_INPUT} = "" ]]; then
+    log $WARN "Please provide a video to process."
+    usage
+  fi
+
+  #  Remove the main command from the argument list.
+  local -r _subcommand="${1:-}"
+  if [[ -z ${_subcommand} ]]; then
+    install_nextflow
+    run_nextflow
+    return 0
+  fi
+
+  shift
+  case "${_subcommand}" in
+    run)
+      run_nextflow
+      ;;
+    install)
+      install_nextflow
+      ;;
     *)
       usage
-    ;;
-    : ) 
-      usage
-    ;;
+      ;;
   esac
-done
-shift $((OPTIND-1))
 
-if [[ ${VIDEO_INPUT} = "" ]]; then
-  log $WARN "Please provide a video to process."
-  usage
-fi
+  return 0
+}
 
 #==== FUNCTION ============================================================
 #         NAME: install_nextflow
@@ -91,12 +130,16 @@ fi
 #==========================================================================
 
 function install_nextflow() {
-  if type ./nextflow &>/dev/null; then
+  if type nextflow &>/dev/null; then
+    log $INFO "Nextflow found..."
+    return 0
+  elif type ./nextflow &>/dev/null; then
     log $INFO "Nextflow found..."
     return 0
   else
     log $INFO "Installing from nextflow.io..."
     curl -s https://get.nextflow.io | bash >/dev/null
+    mv "${PWD}/nextflow" "${INSTALL_DIR}/nextflow"
   fi
   return 0
 }
@@ -108,10 +151,10 @@ function install_nextflow() {
 #==========================================================================
 
 function run_nextflow() {
-  if ./nextflow run video.nf --inputs=$VIDEO_INPUT; then
+  if nextflow run video.nf --inputs=$VIDEO_INPUT; then
     log $INFO "Successfully processed ${VIDEO_INPUT} as completed.mp4!"
     log $INFO "Cleaning up..."
-    ./nextflow clean -f &>/dev/null
+    nextflow clean -f &>/dev/null
   fi
 
   return 0
@@ -124,9 +167,9 @@ function run_nextflow() {
 #==========================================================================
 
 function main() {
-  install_nextflow
-  run_nextflow
-  exit 0
+  get_opts "${@}"
+
+  return 0
 }
 
 main "${@}"
