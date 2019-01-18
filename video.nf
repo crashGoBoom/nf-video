@@ -12,6 +12,8 @@ videofile_ch = file(params.inputs)
 opt_file = file(params.filter)
 watermark_file = file(params.watermark)
 
+file_ext_matcher = params.inputs =~ /\.[a-zA-Z0-9]+$/
+
 /*
  * x and y are for watermark location
  */
@@ -35,7 +37,7 @@ process segment {
   file 'output_*' into segments mode flatten
   file 'input.aac' into input_audio
   """
-  ffmpeg -i ${input_file} -an -map 0 -c copy -f segment -segment_time 10 output_%03d.mov
+  ffmpeg -i ${input_file} -an -map 0 -c copy -f segment -segment_time 10 output_%03d${file_ext_matcher[0]}
   ffmpeg -i ${input_file} -vn -acodec aac input.aac
   """
 }
