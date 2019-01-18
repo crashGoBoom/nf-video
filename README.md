@@ -14,12 +14,12 @@ I thought this sounded very similar to a video processing pipeline! Especially w
 USAGE:
   ./nf-video.sh [FLAGS] [SUBCOMMAND]
 FLAGS:
-  -crf  CRF Number for ffmpeg
-  -h    Prints help information
-  -i    Video to Process (Required.)
-  -w    Adds a watermark (Defaults to upper left.)
-  -x    X location for the watermark
-  -y    Y location for the watermark
+  -c  CRF Number for ffmpeg
+  -h  Prints help information
+  -i  Video to Process (Required.)
+  -w  Adds a watermark (Defaults to upper left.)
+  -x  X location for the watermark
+  -y  Y location for the watermark
 ```
 
 Currently only supports conversion to MP4.
