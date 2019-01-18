@@ -10,44 +10,30 @@ params.filter = 'NO_FILE'
 videofile_ch = file(params.inputs)
 opt_file = file(params.filter)
 
-process convert {
-
+process segment {
   input:
   file input_file from videofile_ch
   output:
-  file 'input.mp4' into input_video
+  file 'output_*' into segments mode flatten
   file 'input.aac' into input_audio
   """
-  ffmpeg -i ${input_file} -vcodec copy -an input.mp4
+  ffmpeg -i ${input_file} -map 0 -c copy -f segment -segment_time 10 output_%03d.mov
   ffmpeg -i ${input_file} -vn -acodec aac input.aac
   """
 }
 
-process segment {
-
-
-  input:
-  file 'input.mp4' from input_video
-  output:
-  file 'output_*' into segments mode flatten
-  '''
-  ffmpeg -i input.mp4 -map 0 -c copy -f segment -segment_time 10 output_%03d.mp4
-  '''
-}
-
 process encode_video {
-
   input:
   file segment_file from segments
   output:
   file 'encoded_*.mp4' into segments_encoded
   """
-  ffmpeg -i ${segment_file} -crf 23 -vcodec libx264 encoded_${segment_file}
+  ffmpeg -i ${segment_file} -crf 23 -vcodec libx264 encoded_${segment_file}.mp4
   """
 }
 
 process concat {
-  publishDir "$workflow.projectDir"
+  publishDir "$workflow.projectDir", mode: 'move'
   input:
   file segment_files from segments_encoded.toList()
   file 'input.aac' from input_audio
