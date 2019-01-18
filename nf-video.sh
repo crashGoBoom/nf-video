@@ -61,12 +61,12 @@ Commands related to this script
 USAGE:
   ./nf-video.sh [FLAGS] [SUBCOMMAND]
 FLAGS:
-  -crf  CRF Number for ffmpeg
-  -h    Prints help information
-  -i    Video to Process (Required.)
-  -w    Adds a watermark (Defaults to lower right.)
-  -x    X location for the watermark
-  -y    Y location for the watermark
+  -c  CRF Number for ffmpeg
+  -h  Prints help information
+  -i  Video to Process (Required.)
+  -w  Adds a watermark (Defaults to lower right.)
+  -x  X location for the watermark
+  -y  Y location for the watermark
 SUBCOMMANDS:
   all                  Do everything (blah, blah2) [default]
 help_message
@@ -78,7 +78,7 @@ function get_opts() {
   #  Parse options to the main command.
   while getopts 'c:h?:w:i:x:y:' opt; do
     case "${opt}" in
-      crf)
+      c)
         CRF="${OPTARG}"
       ;;
       h|\?)
@@ -102,15 +102,12 @@ function get_opts() {
       *)
         usage
       ;;
-      : )
-        usage
-      ;;
     esac
   done
   shift $((OPTIND-1))
 
   if [[ ${VIDEO_INPUT} = "" ]]; then
-    log $WARN "Please provide a video to process."
+    log "${WARN}" "Please provide a video to process."
     usage
   fi
 
@@ -146,13 +143,13 @@ function get_opts() {
 
 function install_nextflow() {
   if type nextflow &>/dev/null; then
-    log $INFO "Nextflow found..."
+    log "${INFO}" "Nextflow found..."
     return 0
   elif type ./nextflow &>/dev/null; then
-    log $INFO "Nextflow found..."
+    log "${INFO}" "Nextflow found..."
     return 0
   else
-    log $INFO "Installing from nextflow.io..."
+    log "${INFO}" "Installing from nextflow.io..."
     curl -s https://get.nextflow.io | bash >/dev/null
     mv "${PWD}/nextflow" "${INSTALL_DIR}/nextflow"
   fi
@@ -171,8 +168,8 @@ function run_nextflow() {
       --watermark="${WATERMARK}" \
       --crf="${CRF}" \
       --y="${Y}" --x="${X}"; then
-    log $INFO "Successfully processed ${VIDEO_INPUT} as completed.mp4!"
-    log $INFO "Cleaning up..."
+    log "${INFO}" "Successfully processed ${VIDEO_INPUT} as completed.mp4!"
+    log "${INFO}" "Cleaning up..."
     nextflow clean -f &>/dev/null
   fi
 
