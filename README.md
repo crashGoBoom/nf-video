@@ -10,12 +10,20 @@ I thought this sounded very similar to a video processing pipeline! Especially w
 
 ## How to use it:
 
-`./nf-video.sh -i $SOME_VIDEO`
+```
+USAGE:
+  ./nf-video.sh [FLAGS] [SUBCOMMAND]
+FLAGS:
+  -crf  CRF Number for ffmpeg
+  -h    Prints help information
+  -i    Video to Process (Required.)
+  -w    Adds a watermark (Defaults to upper left.)
+  -x    X location for the watermark
+  -y    Y location for the watermark
+```
 
-Currently only supports MOV to MP4 conversion.
-Currently only encodes at crf 23.
+Currently only supports conversion to MP4.
 Currently only runs locally.
+More features to be added soon!
 
-Next up. AWS BATCH.
-
-More features to be added.
+## This _will_ install nextflow!
