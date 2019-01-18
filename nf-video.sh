@@ -27,6 +27,7 @@ WARN="\033[31m"
 INFO="\033[32m"
 NOCOLOR="\033[0m"
 INSTALL_DIR="/usr/local/bin"
+CRF=23
 X=10
 Y=10
 
@@ -60,9 +61,12 @@ Commands related to this script
 USAGE:
   ./nf-video.sh [FLAGS] [SUBCOMMAND]
 FLAGS:
-  -h  Prints help information
-  -i  Video to Process (Required.)
-  -w  Adds a watermark (Defaults to lower right.)
+  -crf  CRF Number for ffmpeg
+  -h    Prints help information
+  -i    Video to Process (Required.)
+  -w    Adds a watermark (Defaults to lower right.)
+  -x    X location for the watermark
+  -y    Y location for the watermark
 SUBCOMMANDS:
   all                  Do everything (blah, blah2) [default]
 help_message
@@ -72,8 +76,11 @@ help_message
 
 function get_opts() {
   #  Parse options to the main command.
-  while getopts 'h?:w:i:x:y:' opt; do
+  while getopts 'c:h?:w:i:x:y:' opt; do
     case "${opt}" in
+      crf)
+        CRF="${OPTARG}"
+      ;;
       h|\?)
         log $INFO "Help:\n-w Add a watermark image (PNG,JPG). "
         usage
@@ -162,6 +169,7 @@ function run_nextflow() {
   if nextflow run video.nf \
       --inputs="${VIDEO_INPUT}" \
       --watermark="${WATERMARK}" \
+      --crf="${CRF}" \
       --y="${Y}" --x="${X}"; then
     log $INFO "Successfully processed ${VIDEO_INPUT} as completed.mp4!"
     log $INFO "Cleaning up..."

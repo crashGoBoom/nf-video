@@ -6,11 +6,13 @@
 
 params.inputs = "$baseDir/video.mov"
 params.filter = 'NO_FILE'
+params.crf = 23
 params.watermark = ''
 
 videofile_ch = file(params.inputs)
 opt_file = file(params.filter)
 watermark_file = file(params.watermark)
+crf = params.crf
 
 file_ext_matcher = params.inputs =~ /\.[a-zA-Z0-9]+$/
 
@@ -30,6 +32,12 @@ if (params.watermark) {
   watermark = "-i $params.watermark -filter_complex 'overlay=$x:$y'"
 }
 
+/*
+ * In the segment process we must remove the audio to be encoded later
+ * since we are segmenting the file for parallel encoding. Otherwise you will
+ * hear popping noises at each segment.
+ * TODO: Add audio encoding options and process.
+ */
 process segment {
   input:
   file input_file from videofile_ch
@@ -41,7 +49,10 @@ process segment {
   ffmpeg -i ${input_file} -vn -acodec aac input.aac
   """
 }
-
+/*
+ * In the encode_video process we encode the video and also add the
+ * watermark file as an input if passed as an option.
+ */
 process encode_video {
   input:
   file segment_file from segments
@@ -49,10 +60,13 @@ process encode_video {
   output:
   file 'encoded_*.mp4' into segments_encoded
   """
-  ffmpeg -i ${segment_file} ${watermark} -crf 23 -vcodec libx264 encoded_${segment_file}.mp4
+  ffmpeg -i ${segment_file} ${watermark} -crf ${params.crf} -vcodec libx264 encoded_${segment_file}.mp4
   """
 }
-
+/*
+ * In the concat process we recombine the segments along
+ * with the audio and output a new mp4 file.
+ */
 process concat {
   publishDir "$workflow.projectDir", mode: 'move'
   input:
