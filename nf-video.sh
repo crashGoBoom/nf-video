@@ -77,7 +77,7 @@ function get_opts() {
         usage
       ;;
       w)
-        WATERMARK=${OPTARG}
+        WATERMARK="${OPTARG}"
         log $INFO "Adding a watermark with ${WATERMARK}"
       ;;
       i)
@@ -151,7 +151,7 @@ function install_nextflow() {
 #==========================================================================
 
 function run_nextflow() {
-  if nextflow run video.nf --inputs=$VIDEO_INPUT; then
+  if nextflow run video.nf --inputs="${VIDEO_INPUT}" --watermark="${WATERMARK}"; then
     log $INFO "Successfully processed ${VIDEO_INPUT} as completed.mp4!"
     log $INFO "Cleaning up..."
     nextflow clean -f &>/dev/null
