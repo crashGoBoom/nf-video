@@ -6,9 +6,16 @@
 
 params.inputs = "$baseDir/video.mov"
 params.filter = 'NO_FILE'
+params.watermark = ''
 
 videofile_ch = file(params.inputs)
 opt_file = file(params.filter)
+watermark_file = file(params.watermark)
+
+watermark = ''
+if (params.watermark) {
+  watermark = "-i $params.watermark -filter_complex 'overlay=10:10'"
+}
 
 process segment {
   input:
@@ -17,7 +24,7 @@ process segment {
   file 'output_*' into segments mode flatten
   file 'input.aac' into input_audio
   """
-  ffmpeg -i ${input_file} -map 0 -c copy -f segment -segment_time 10 output_%03d.mov
+  ffmpeg -i ${input_file} -an -map 0 -c copy -f segment -segment_time 10 output_%03d.mov
   ffmpeg -i ${input_file} -vn -acodec aac input.aac
   """
 }
@@ -25,10 +32,11 @@ process segment {
 process encode_video {
   input:
   file segment_file from segments
+  file watermark_input from watermark_file
   output:
   file 'encoded_*.mp4' into segments_encoded
   """
-  ffmpeg -i ${segment_file} -crf 23 -vcodec libx264 encoded_${segment_file}.mp4
+  ffmpeg -i ${segment_file} ${watermark} -crf 23 -vcodec libx264 encoded_${segment_file}.mp4
   """
 }
 
