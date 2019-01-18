@@ -149,11 +149,29 @@ function install_nextflow() {
     log "${INFO}" "Nextflow found..."
     return 0
   else
+    log "${WARN}" "Nextflow not found!"
+    prompt_user "Would you like to install it?"
     log "${INFO}" "Installing from nextflow.io..."
     curl -s https://get.nextflow.io | bash >/dev/null
     mv "${PWD}/nextflow" "${INSTALL_DIR}/nextflow"
   fi
   return 0
+}
+
+#==== FUNCTION ============================================================
+#         NAME: prompt_user
+#  DESCRIPTION: Prompts the user for something.
+#      CREATED: 20190116
+#==========================================================================
+
+function prompt_user() {
+    log "${WARN}" "${1}"
+    read -p "(Y)es or (N)o?" -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]
+    then
+        [[ "$0" = "${BASH_SOURCE[*]}" ]] && exit 1 || return 1 # handle exits from shell or function but don't exit interactive shell
+    fi
 }
 
 #==== FUNCTION ============================================================

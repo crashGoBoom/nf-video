@@ -26,4 +26,4 @@ Currently only supports conversion to MP4.
 Currently only runs locally.
 More features to be added soon!
 
-## This _will_ install nextflow!
+## If nextflow is not installed you will be prompted.
