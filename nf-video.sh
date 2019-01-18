@@ -27,6 +27,8 @@ WARN="\033[31m"
 INFO="\033[32m"
 NOCOLOR="\033[0m"
 INSTALL_DIR="/usr/local/bin"
+X=10
+Y=10
 
 #==========================================================================
 # Functions
@@ -70,19 +72,25 @@ help_message
 
 function get_opts() {
   #  Parse options to the main command.
-  while getopts 'h?:w:i:' opt; do
+  while getopts 'h?:w:i:x:y:' opt; do
     case "${opt}" in
       h|\?)
         log $INFO "Help:\n-w Add a watermark image (PNG,JPG). "
         usage
       ;;
+      i)
+        VIDEO_INPUT=${OPTARG}
+        log $INFO "Processing: ${VIDEO_INPUT}"
+      ;;
       w)
         WATERMARK="${OPTARG}"
         log $INFO "Adding a watermark with ${WATERMARK}"
       ;;
-      i)
-        VIDEO_INPUT=${OPTARG}
-        log $INFO "Processing: ${VIDEO_INPUT}"
+      x)
+        X="${OPTARG}"
+      ;;
+      y)
+        Y="${OPTARG}"
       ;;
       *)
         usage
@@ -151,7 +159,10 @@ function install_nextflow() {
 #==========================================================================
 
 function run_nextflow() {
-  if nextflow run video.nf --inputs="${VIDEO_INPUT}" --watermark="${WATERMARK}"; then
+  if nextflow run video.nf \
+      --inputs="${VIDEO_INPUT}" \
+      --watermark="${WATERMARK}" \
+      --y="${Y}" --x="${X}"; then
     log $INFO "Successfully processed ${VIDEO_INPUT} as completed.mp4!"
     log $INFO "Cleaning up..."
     nextflow clean -f &>/dev/null

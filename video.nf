@@ -12,9 +12,20 @@ videofile_ch = file(params.inputs)
 opt_file = file(params.filter)
 watermark_file = file(params.watermark)
 
+/*
+ * x and y are for watermark location
+ */
+x=10
+y=10
 watermark = ''
+if (params.x) {
+  x = params.x
+}
+if (params.y) {
+  y = params.y
+}
 if (params.watermark) {
-  watermark = "-i $params.watermark -filter_complex 'overlay=10:10'"
+  watermark = "-i $params.watermark -filter_complex 'overlay=$x:$y'"
 }
 
 process segment {
