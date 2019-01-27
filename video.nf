@@ -4,12 +4,16 @@
  * Copyright (c) 2019, Christopher Mundus (crashGoBoom)
  */
 
+/*
+ * Params for passing in options.
+ */
 params.inputs = "$baseDir/video.mov"
-params.filter = 'NO_FILE'
 params.crf = 23
 params.duration = 5
 params.framerate = 30
 params.watermark = ''
+params.x=10
+params.y=10
 params.font = 'NO_FILE'
 params.srt = ''
 params.language = 'eng'
@@ -17,6 +21,9 @@ params.text = ''
 params.background_color = 'WhiteSmoke'
 params.font_color = 'DarkGray'
 
+/*
+ * Channels for file inputs.
+ */
 srt_file = Channel.empty()
 watermark_file = Channel.empty()
 fontfile_ch = Channel.empty()
@@ -26,44 +33,46 @@ imagefile_ch = Channel.empty()
 user_input = file(params.inputs)
 input_path = user_input.getParent()
 input_extension = user_input.getExtension()
-println input_extension
+
+/*
+ * If we are using a png file as the input hook up that channel and
+ * leave the video file channel blank so segmenting is not attempted.
+ */
 if ( input_extension == 'png' ) {
   imagefile_ch = file(params.inputs)
 } else {
   videofile_ch = file(params.inputs)
 }
 
-opt_file = file(params.filter)
+/*
+ * Fade in and fade out calculations.
+ */
 fade_in = params.framerate * params.duration - params.framerate
 fade_out_start = params.framerate * params.duration - params.framerate
 fade_out_end = params.framerate
 
-crf = params.crf
+/*
+ * Title text for bumper videos.
+ */
 title_text = Channel.from(params.text)
 
-file_ext_matcher = params.inputs =~ /\.[a-zA-Z0-9]+$/
-
 /*
- * x and y are for watermark location
+ * Create empty strings for the watermark and subtitles
+ * options as default.
  */
-x=10
-y=10
 watermark = ''
 subtitles = ''
-if (params.x) {
-  x = params.x
-}
-if (params.y) {
-  y = params.y
-}
+
 if (params.watermark) {
   watermark_file = file(params.watermark)
-  watermark = "-i $params.watermark -filter_complex 'overlay=$x:$y'"
+  watermark = "-i $params.watermark -filter_complex 'overlay=$params.x:$params.y'"
 }
+
 if (params.srt) {
   srt_file = file(params.srt)
   subtitles = "-i $params.srt -c:v copy -c:a copy -c:s mov_text -metadata:s:s:0 language=$params.language"
 }
+
 if (params.font) {
   fontfile_ch = file(params.font)
 }
@@ -103,7 +112,7 @@ process segment {
   file 'output_*' into segments mode flatten
   file 'input.aac' into input_audio
   """
-  ffmpeg -i ${input_file} -an -map 0 -c copy -f segment -segment_time 10 output_%03d${file_ext_matcher[0]}
+  ffmpeg -i ${input_file} -an -map 0 -c copy -f segment -segment_time 10 output_%03d.${input_extension}
   ffmpeg -i ${input_file} -vn -acodec aac input.aac
   """
 }
@@ -122,6 +131,7 @@ process encode_video {
   ffmpeg -i ${segment_file} ${watermark} -crf ${params.crf} -vcodec libx264 encoded_${segment_file}.mp4
   """
 }
+
 /*
  * In the concat process we recombine the segments along
  * with the audio and output a new mp4 file.
