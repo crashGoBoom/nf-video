@@ -14,11 +14,16 @@ I thought this sounded very similar to a video processing pipeline! Especially w
 USAGE:
   ./nf-video.sh [FLAGS] [SUBCOMMAND]
 FLAGS:
+  --bgcolor Background Color of bumper video
   -c  CRF Number for ffmpeg
+  -d  Set the duration of the bumper video
+  -f  Font for bumper title
+  --fontcolor Font Color of bumper video
   -h  Prints help information
   -i  Video to Process (Required.)
   -l  Language of the subtitle track in ISO 639. 3 letter language code. (eng, fra, etc..)
   -s  Adds a subtitle file.
+  -t  Adds text to the bumper video.
   -w  Adds a watermark (Defaults to upper left.)
   -x  X location for the watermark
   -y  Y location for the watermark
@@ -36,8 +41,14 @@ To add subtitles to a video in english:
 ./nf-video.sh -i myvideo.mov -s example.srt -l eng
 ```
 
+To create a simple 5 second bumper from your logo (must be png) and a title with Roboto font:
+```
+./nf-video.sh -i mylogo.png -f $YOUR_FONT_DIR/Roboto-Medium.ttf -t "This is my title" -d 5 --bgcolor WhiteSmoke --fontcolor DarkGray
+```
+
 Currently only supports conversion to MP4.
 Currently only runs locally.
+
 More features to be added soon!
 
 ## If nextflow is not installed you will be prompted.

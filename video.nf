@@ -7,17 +7,39 @@
 params.inputs = "$baseDir/video.mov"
 params.filter = 'NO_FILE'
 params.crf = 23
+params.duration = 5
+params.framerate = 30
 params.watermark = ''
-
+params.font = 'NO_FILE'
 params.srt = ''
 params.language = 'eng'
-srt_file = ''
+params.text = ''
+params.background_color = 'WhiteSmoke'
+params.font_color = 'DarkGray'
 
-watermark_file = ''
+srt_file = Channel.empty()
+watermark_file = Channel.empty()
+fontfile_ch = Channel.empty()
+videofile_ch = Channel.empty()
+imagefile_ch = Channel.empty()
 
-videofile_ch = file(params.inputs)
+user_input = file(params.inputs)
+input_path = user_input.getParent()
+input_extension = user_input.getExtension()
+println input_extension
+if ( input_extension == 'png' ) {
+  imagefile_ch = file(params.inputs)
+} else {
+  videofile_ch = file(params.inputs)
+}
+
 opt_file = file(params.filter)
+fade_in = params.framerate * params.duration - params.framerate
+fade_out_start = params.framerate * params.duration - params.framerate
+fade_out_end = params.framerate
+
 crf = params.crf
+title_text = Channel.from(params.text)
 
 file_ext_matcher = params.inputs =~ /\.[a-zA-Z0-9]+$/
 
@@ -42,6 +64,31 @@ if (params.srt) {
   srt_file = file(params.srt)
   subtitles = "-i $params.srt -c:v copy -c:a copy -c:s mov_text -metadata:s:s:0 language=$params.language"
 }
+if (params.font) {
+  fontfile_ch = file(params.font)
+}
+
+/*
+ * In the create_bumper process we create a bumper video.
+ */
+process create_bumper {
+  publishDir "$workflow.projectDir", mode: 'move'
+  input:
+  file input_file from imagefile_ch
+  file input_font from fontfile_ch
+  val x from title_text
+  output:
+  file 'completed_bumper.mp4' into file_bumper_output
+
+  shell:
+  '''
+  ffmpeg -f lavfi -i color=c=!{params.background_color}:s=1280x720:d=!{params.duration}:r=30 \
+  -i !{input_file} \
+  -filter_complex \
+  "[0] drawtext=fontfile=!{input_font}:fontsize=60:fontcolor=!{params.font_color}:x=(w-text_w)/2:y=(h-text_h)/1.1:text='!{x}', fade=in:0:!{params.framerate},fade=out:!{fade_out_start}:!{fade_out_end} [b]; [b] overlay=(W-w)/2:(H-h)/2, fade=in:0:!{params.framerate},fade=out:!{fade_out_start}:!{fade_out_end}" \
+  completed_bumper.mp4
+  '''
+}
 
 /*
  * In the segment process we must remove the audio to be encoded later
@@ -60,6 +107,7 @@ process segment {
   ffmpeg -i ${input_file} -vn -acodec aac input.aac
   """
 }
+
 /*
  * In the encode_video process we encode the video and also add the
  * watermark file as an input if passed as an option.
@@ -85,7 +133,6 @@ process concat {
   input:
   file segment_files from segments_encoded.toList()
   file 'input.aac' from input_audio
-  file srt_file from srt_file
   output:
   file 'completed.mp4' optional true into file_output
   file 'pre_completed.mp4' optional true into file_optional_output

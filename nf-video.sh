@@ -27,6 +27,11 @@ WARN="\033[31m"
 INFO="\033[32m"
 NOCOLOR="\033[0m"
 INSTALL_DIR="/usr/local/bin"
+BACKGROUND_COLOR='WhiteSmoke'
+FONT=''
+FONT_COLOR='DarkGray'
+DUR=5
+TITLE_TEXT=''
 SRT=''
 SRT_LANG='eng'
 CRF=23
@@ -63,11 +68,16 @@ Commands related to this script
 USAGE:
   ./nf-video.sh [FLAGS] [SUBCOMMAND]
 FLAGS:
+  --bgcolor Background Color of bumper video
   -c  CRF Number for ffmpeg
+  -d  Set the duration of the bumper video
+  -f  Font for bumper title
+  --fontcolor Font Color of bumper video
   -h  Prints help information
   -i  Video to Process (Required.)
   -l  Language of the subtitle track in ISO 639. 3 letter language code. (eng, fra, etc..)
   -s  Adds a subtitle file.
+  -t  Adds text to the bumper video.
   -w  Adds a watermark (Defaults to upper left.)
   -x  X location for the watermark
   -y  Y location for the watermark
@@ -80,10 +90,29 @@ help_message
 
 function get_opts() {
   #  Parse options to the main command.
-  while getopts 'c:h?:i:l:s:w:x:y:' opt; do
+  while getopts ':-:c:d:f:h?:i:l:s:t:w:x:y:' opt; do
     case "${opt}" in
+      -)
+          case "${OPTARG}" in
+            bgcolor)
+              BACKGROUND_COLOR="${!OPTIND}"
+              OPTIND=$(( OPTIND + 1 ))
+            ;;
+            fontcolor)
+              FONT_COLOR="${!OPTIND}"
+              OPTIND=$(( OPTIND + 1 ))
+            ;;
+          esac
+      ;;
       c)
         CRF="${OPTARG}"
+      ;;
+      d)
+        DUR="${OPTARG}"
+      ;;
+      f)
+        FONT=${OPTARG}
+        log $INFO "Adding Font: ${FONT}"
       ;;
       h|\?)
         log $INFO "Help:\n-w Add a watermark image (PNG,JPG). "
@@ -100,6 +129,10 @@ function get_opts() {
       s)
         SRT=${OPTARG}
         log $INFO "Adding Subtitles from: ${SRT}"
+      ;;
+      t)
+        TITLE_TEXT=${OPTARG}
+        log $INFO "Adding title text: ${TITLE_TEXT}"
       ;;
       w)
         WATERMARK="${OPTARG}"
@@ -198,11 +231,17 @@ function run_nextflow() {
       --srt="${SRT}" \
       --language="${SRT_LANG}" \
       --watermark="${WATERMARK}" \
+      --image="${IMAGE}" \
       --crf="${CRF}" \
+      --font="${FONT}" \
+      --text="${TITLE_TEXT}" \
+      --duration="${DUR}" \
+      --background_color="${BACKGROUND_COLOR}" \
+      --font_color="${FONT_COLOR}" \
       --y="${Y}" --x="${X}"; then
     log "${INFO}" "Successfully processed ${VIDEO_INPUT} as completed.mp4!"
     log "${INFO}" "Cleaning up..."
-    nextflow clean -f &>/dev/null
+    # nextflow clean -f &>/dev/null
   fi
 
   return 0
