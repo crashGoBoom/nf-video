@@ -68,7 +68,7 @@ FLAGS:
   -i  Video to Process (Required.)
   -l  Language of the subtitle track in ISO 639. 3 letter language code. (eng, fra, etc..)
   -s  Adds a subtitle file.
-  -w  Adds a watermark (Defaults to lower right.)
+  -w  Adds a watermark (Defaults to upper left.)
   -x  X location for the watermark
   -y  Y location for the watermark
 SUBCOMMANDS:
