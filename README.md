@@ -24,6 +24,18 @@ FLAGS:
   -y  Y location for the watermark
 ```
 
+## Examples:
+
+To add a watermark to the lower right of a 720p video:
+```
+./nf-video.sh -i myvideo.mov -w someimage.png -x 1180 -y 650
+```
+
+To add subtitles to a video in english:
+```
+./nf-video.sh -i myvideo.mov -s example.srt -l eng
+```
+
 Currently only supports conversion to MP4.
 Currently only runs locally.
 More features to be added soon!
