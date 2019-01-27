@@ -27,6 +27,8 @@ WARN="\033[31m"
 INFO="\033[32m"
 NOCOLOR="\033[0m"
 INSTALL_DIR="/usr/local/bin"
+SRT=''
+SRT_LANG='eng'
 CRF=23
 X=10
 Y=10
@@ -64,6 +66,8 @@ FLAGS:
   -c  CRF Number for ffmpeg
   -h  Prints help information
   -i  Video to Process (Required.)
+  -l  Language of the subtitle track in ISO 639. 3 letter language code. (eng, fra, etc..)
+  -s  Adds a subtitle file.
   -w  Adds a watermark (Defaults to lower right.)
   -x  X location for the watermark
   -y  Y location for the watermark
@@ -76,7 +80,7 @@ help_message
 
 function get_opts() {
   #  Parse options to the main command.
-  while getopts 'c:h?:w:i:x:y:' opt; do
+  while getopts 'c:h?:i:l:s:w:x:y:' opt; do
     case "${opt}" in
       c)
         CRF="${OPTARG}"
@@ -88,6 +92,14 @@ function get_opts() {
       i)
         VIDEO_INPUT=${OPTARG}
         log $INFO "Processing: ${VIDEO_INPUT}"
+      ;;
+      l)
+        SRT_LANG=${OPTARG}
+        log $INFO "Setting srt language to: ${SRT_LANG} "
+      ;;
+      s)
+        SRT=${OPTARG}
+        log $INFO "Adding Subtitles from: ${SRT}"
       ;;
       w)
         WATERMARK="${OPTARG}"
@@ -183,6 +195,8 @@ function prompt_user() {
 function run_nextflow() {
   if nextflow run video.nf \
       --inputs="${VIDEO_INPUT}" \
+      --srt="${SRT}" \
+      --language="${SRT_LANG}" \
       --watermark="${WATERMARK}" \
       --crf="${CRF}" \
       --y="${Y}" --x="${X}"; then

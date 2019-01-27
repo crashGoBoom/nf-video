@@ -9,9 +9,14 @@ params.filter = 'NO_FILE'
 params.crf = 23
 params.watermark = ''
 
+params.srt = ''
+params.language = 'eng'
+srt_file = ''
+
+watermark_file = ''
+
 videofile_ch = file(params.inputs)
 opt_file = file(params.filter)
-watermark_file = file(params.watermark)
 crf = params.crf
 
 file_ext_matcher = params.inputs =~ /\.[a-zA-Z0-9]+$/
@@ -22,6 +27,7 @@ file_ext_matcher = params.inputs =~ /\.[a-zA-Z0-9]+$/
 x=10
 y=10
 watermark = ''
+subtitles = ''
 if (params.x) {
   x = params.x
 }
@@ -29,7 +35,12 @@ if (params.y) {
   y = params.y
 }
 if (params.watermark) {
+  watermark_file = file(params.watermark)
   watermark = "-i $params.watermark -filter_complex 'overlay=$x:$y'"
+}
+if (params.srt) {
+  srt_file = file(params.srt)
+  subtitles = "-i $params.srt -c:v copy -c:a copy -c:s mov_text -metadata:s:s:0 language=$params.language"
 }
 
 /*
@@ -68,22 +79,47 @@ process encode_video {
  * with the audio and output a new mp4 file.
  */
 process concat {
-  publishDir "$workflow.projectDir", mode: 'move'
+  if (!params.srt) {
+    publishDir "$workflow.projectDir", mode: 'move'
+  }
   input:
   file segment_files from segments_encoded.toList()
   file 'input.aac' from input_audio
-
+  file srt_file from srt_file
   output:
-  file 'completed.mp4' into file_output
+  file 'completed.mp4' optional true into file_output
+  file 'pre_completed.mp4' optional true into file_optional_output
   shell:
   '''
   files=(!{segment_files})
+  output_filename='completed.mp4'
+  srt="!{subtitles}"
   IFS=$"\n"
   sorted=($(sort <<<"${files[*]}"))
   for i in ${sorted[@]}; do
     echo "file $i" >> concatlist.txt
   done
-  ffmpeg -f concat -i concatlist.txt -i input.aac -c copy completed.mp4
+  if [[ ! -z "${srt}" ]]; then
+    output_filename='pre_completed.mp4'
+  fi
+  ffmpeg -f concat -i concatlist.txt -i input.aac -c copy "${output_filename}"
+  '''
+}
+
+/*
+ * In the subtitles process we add subtitles if needed.
+ */
+process subtitles {
+  publishDir "$workflow.projectDir", mode: 'move'
+  input:
+  file 'pre_completed.mp4' from file_optional_output
+  file srt_file from srt_file
+  output:
+  file 'completed.mp4' into file_srt_output
+
+  shell:
+  '''
+  ffmpeg -i pre_completed.mp4 !{subtitles} completed.mp4
   '''
 }
 

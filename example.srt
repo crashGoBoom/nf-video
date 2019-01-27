@@ -1,0 +1,11 @@
+1
+00:00:1,330 --> 00:00:3,528
+This is a test subtitle file
+
+2
+00:00:6,552 --> 00:00:10,502
+And hopefully it works well.
+
+3
+00:00:12,526 --> 00:00:30,000
+Enjoy!
