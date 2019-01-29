@@ -7,7 +7,8 @@
 /*
  * Params for passing in options.
  */
-params.inputs = "$baseDir/video.mov"
+params.video_input = ''
+params.bumper_image = ''
 params.crf = 23
 params.duration = 5
 params.framerate = 30
@@ -30,18 +31,22 @@ fontfile_ch = Channel.empty()
 videofile_ch = Channel.empty()
 imagefile_ch = Channel.empty()
 
-user_input = file(params.inputs)
-input_path = user_input.getParent()
-input_extension = user_input.getExtension()
 
 /*
  * If we are using a png file as the input hook up that channel and
  * leave the video file channel blank so segmenting is not attempted.
  */
-if ( input_extension == 'png' ) {
-  imagefile_ch = file(params.inputs)
-} else {
-  videofile_ch = file(params.inputs)
+if ( params.bumper_image ) {
+  imagefile_ch = file(params.bumper_image)
+} 
+
+input_extension = ''
+user_input = ''
+if ( params.video_input ) {
+  videofile_ch = file(params.video_input)
+  user_input = file(params.video_input)
+  input_path = user_input.getParent()
+  input_extension = user_input.getExtension()
 }
 
 /*
@@ -81,7 +86,9 @@ if (params.font) {
  * In the create_bumper process we create a bumper video.
  */
 process create_bumper {
-  publishDir "$workflow.projectDir", mode: 'move'
+  if (!params.srt || !params.video_input) {
+    publishDir "$workflow.projectDir", mode: 'move'
+  }
   input:
   file input_file from imagefile_ch
   file input_font from fontfile_ch
@@ -109,7 +116,7 @@ process segment {
   input:
   file input_file from videofile_ch
   output:
-  file 'output_*' into segments mode flatten
+  file 'output_*' into segments
   file 'input.aac' into input_audio
   """
   ffmpeg -i ${input_file} -an -map 0 -c copy -f segment -segment_time 10 output_%03d.${input_extension}
@@ -141,11 +148,11 @@ process concat {
     publishDir "$workflow.projectDir", mode: 'move'
   }
   input:
-  file segment_files from segments_encoded.toList()
+  file segment_files from segments_encoded
   file 'input.aac' from input_audio
   output:
-  file 'completed.mp4' optional true into file_output
-  file 'pre_completed.mp4' optional true into file_optional_output
+  file '*completed.mp4' optional true into file_output
+  file 'needs_bumper.mp4' optional true into file_needs_bumper_output
   shell:
   '''
   files=(!{segment_files})
@@ -158,6 +165,8 @@ process concat {
   done
   if [[ ! -z "${srt}" ]]; then
     output_filename='pre_completed.mp4'
+  elif [[ ! -z "${srt}" ]]; then
+    output_filename='needs_bumper.mp4'
   fi
   ffmpeg -f concat -i concatlist.txt -i input.aac -c copy "${output_filename}"
   '''
@@ -169,14 +178,41 @@ process concat {
 process subtitles {
   publishDir "$workflow.projectDir", mode: 'move'
   input:
-  file 'pre_completed.mp4' from file_optional_output
+  file 'pre_completed.mp4' from file_output
   file srt_file from srt_file
   output:
-  file 'completed.mp4' into file_srt_output
+  file 'completed.mp4' optional true into file_srt_output
+  file 'needs_bumper.mp4' optional true into file_add_bumper
+  shell:
+  '''
+  bumper="!{params.bumper_image}"
+  output_filename='completed.mp4'
+  if [[ ! -z "${bumper}" ]]; then
+    output_filename='needs_bumper.mp4'
+  fi
+  ffmpeg -i pre_completed.mp4 !{subtitles} "${output_filename}"
+  '''
+}
+
+/*
+ * In the add_bumper process we add the bumper video if needed.
+ */
+process add_bumper {
+  publishDir "$workflow.projectDir", mode: 'move'
+  input:
+  file 'completed_bumper.mp4' from file_bumper_output
+  file 'needs_bumper.mp4' from file_needs_bumper_output
+  file 'needs_bumper.mp4' from file_add_bumper
+  output:
+  file 'completed_with_bumper.mp4' into file_bumper_added_output
 
   shell:
   '''
-  ffmpeg -i pre_completed.mp4 !{subtitles} completed.mp4
+  
+  mkfifo temp1 temp2
+  ffmpeg -y -i completed_bumper.mp4 -c copy -bsf:v h264_mp4toannexb -f mpegts temp1 2> /dev/null & \
+  ffmpeg -y -i needs_bumper.mp4 -c copy -bsf:v h264_mp4toannexb -f mpegts temp2 2> /dev/null & \
+  ffmpeg -f mpegts -i "concat:temp1|temp2" -c copy -bsf:a aac_adtstoasc completed_with_bumper.mp4
   '''
 }
 

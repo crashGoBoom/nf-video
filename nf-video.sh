@@ -37,7 +37,7 @@ SRT_LANG='eng'
 CRF=23
 X=10
 Y=10
-
+BUMPER_IMAGE=''
 #==========================================================================
 # Functions
 #==========================================================================
@@ -98,6 +98,10 @@ function get_opts() {
               BACKGROUND_COLOR="${!OPTIND}"
               OPTIND=$(( OPTIND + 1 ))
             ;;
+            bumperimage)
+              BUMPER_IMAGE="${!OPTIND}"
+              OPTIND=$(( OPTIND + 1 ))
+            ;;
             fontcolor)
               FONT_COLOR="${!OPTIND}"
               OPTIND=$(( OPTIND + 1 ))
@@ -151,7 +155,7 @@ function get_opts() {
   done
   shift $((OPTIND-1))
 
-  if [[ ${VIDEO_INPUT} = "" ]]; then
+  if [[ ${VIDEO_INPUT} = "" && ${BUMPER_IMAGE} = "" ]]; then
     log "${WARN}" "Please provide a video to process."
     usage
   fi
@@ -227,7 +231,8 @@ function prompt_user() {
 
 function run_nextflow() {
   if nextflow run video.nf \
-      --inputs="${VIDEO_INPUT}" \
+      --video_input="${VIDEO_INPUT}" \
+      --bumper_image="${BUMPER_IMAGE}" \
       --srt="${SRT}" \
       --language="${SRT_LANG}" \
       --watermark="${WATERMARK}" \
