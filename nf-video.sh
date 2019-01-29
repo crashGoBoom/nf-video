@@ -246,7 +246,7 @@ function run_nextflow() {
       --y="${Y}" --x="${X}"; then
     log "${INFO}" "Successfully processed ${VIDEO_INPUT} as completed.mp4!"
     log "${INFO}" "Cleaning up..."
-    nextflow clean -f &>/dev/null
+   # nextflow clean -f &>/dev/null
   fi
 
   return 0

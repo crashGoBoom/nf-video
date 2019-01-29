@@ -7,7 +7,7 @@
 /*
  * Params for passing in options.
  */
-params.video_input = ''
+params.video_input = "$baseDir/video.mov"
 params.bumper_image = ''
 params.crf = 23
 params.duration = 5
@@ -116,7 +116,7 @@ process segment {
   input:
   file input_file from videofile_ch
   output:
-  file 'output_*' into segments
+  file 'output_*' into segments mode flatten
   file 'input.aac' into input_audio
   """
   ffmpeg -i ${input_file} -an -map 0 -c copy -f segment -segment_time 10 output_%03d.${input_extension}
@@ -128,6 +128,7 @@ process segment {
  * In the encode_video process we encode the video and also add the
  * watermark file as an input if passed as an option.
  */
+
 process encode_video {
   input:
   file segment_file from segments
@@ -148,7 +149,7 @@ process concat {
     publishDir "$workflow.projectDir", mode: 'move'
   }
   input:
-  file segment_files from segments_encoded
+  file segment_files from segments_encoded.toList()
   file 'input.aac' from input_audio
   output:
   file '*completed.mp4' optional true into file_output
