@@ -65,7 +65,7 @@ subtitles = ''
 
 if (params.watermark) {
   watermark_file = file(params.watermark)
-  watermark = "-i $params.watermark -filter_complex 'overlay=$params.x:$params.y'"
+  watermark = "-i $watermark_file -filter_complex 'overlay=$params.x:$params.y'"
 }
 
 if (params.srt) {
