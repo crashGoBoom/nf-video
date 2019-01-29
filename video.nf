@@ -25,9 +25,9 @@ params.font_color = 'DarkGray'
 /*
  * Channels for file inputs.
  */
-srt_file = Channel.empty()
-watermark_file = Channel.empty()
-fontfile_ch = Channel.empty()
+srt_file = ''
+watermark_file = ''
+fontfile_ch = ''
 videofile_ch = Channel.empty()
 imagefile_ch = Channel.empty()
 
@@ -70,12 +70,14 @@ subtitles = ''
 
 if (params.watermark) {
   watermark_file = file(params.watermark)
-  watermark = "-i $params.watermark -filter_complex 'overlay=$params.x:$params.y'"
+  watermark = "-i $watermark_file -filter_complex 'overlay=$params.x:$params.y'"
 }
 
 if (params.srt) {
   srt_file = file(params.srt)
   subtitles = "-i $params.srt -c:v copy -c:a copy -c:s mov_text -metadata:s:s:0 language=$params.language"
+} else {
+  srt_file = Channel.empty()
 }
 
 if (params.font) {
