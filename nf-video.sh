@@ -69,6 +69,7 @@ USAGE:
   ./nf-video.sh [FLAGS] [SUBCOMMAND]
 FLAGS:
   --bgcolor Background Color of bumper video
+  --bumperimage Image to use for the bumper video
   -c  CRF Number for ffmpeg
   -d  Set the duration of the bumper video
   -f  Font for bumper title
