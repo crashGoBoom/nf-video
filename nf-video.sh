@@ -37,7 +37,7 @@ SRT_LANG='eng'
 CRF=23
 X=10
 Y=10
-
+BUMPER_IMAGE=''
 #==========================================================================
 # Functions
 #==========================================================================
@@ -69,6 +69,7 @@ USAGE:
   ./nf-video.sh [FLAGS] [SUBCOMMAND]
 FLAGS:
   --bgcolor Background Color of bumper video
+  --bumperimage Image to use for the bumper video
   -c  CRF Number for ffmpeg
   -d  Set the duration of the bumper video
   -f  Font for bumper title
@@ -96,6 +97,10 @@ function get_opts() {
           case "${OPTARG}" in
             bgcolor)
               BACKGROUND_COLOR="${!OPTIND}"
+              OPTIND=$(( OPTIND + 1 ))
+            ;;
+            bumperimage)
+              BUMPER_IMAGE="${!OPTIND}"
               OPTIND=$(( OPTIND + 1 ))
             ;;
             fontcolor)
@@ -151,7 +156,7 @@ function get_opts() {
   done
   shift $((OPTIND-1))
 
-  if [[ ${VIDEO_INPUT} = "" ]]; then
+  if [[ ${VIDEO_INPUT} = "" && ${BUMPER_IMAGE} = "" ]]; then
     log "${WARN}" "Please provide a video to process."
     usage
   fi
@@ -227,7 +232,8 @@ function prompt_user() {
 
 function run_nextflow() {
   if nextflow run video.nf \
-      --inputs="${VIDEO_INPUT}" \
+      --video_input="${VIDEO_INPUT}" \
+      --bumper_image="${BUMPER_IMAGE}" \
       --srt="${SRT}" \
       --language="${SRT_LANG}" \
       --watermark="${WATERMARK}" \
@@ -241,7 +247,7 @@ function run_nextflow() {
       --y="${Y}" --x="${X}"; then
     log "${INFO}" "Successfully processed ${VIDEO_INPUT} as completed.mp4!"
     log "${INFO}" "Cleaning up..."
-    nextflow clean -f &>/dev/null
+   # nextflow clean -f &>/dev/null
   fi
 
   return 0
